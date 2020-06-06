@@ -2,10 +2,10 @@
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # install and load necessary packages
-install.packages('raster')
-install.packages('tmap')
-install.packages('sf')
-install.packages('grid')
+#install.packages('raster')
+#install.packages('tmap')
+#install.packages('sf')
+#install.packages('grid')
 library(raster)
 library(tmap)
 library(sf)
@@ -27,7 +27,7 @@ gerElev <- getData('alt', country='DEU', mask=TRUE)
 
 # SF object for later use:
 gerSF <- st_as_sf(ger) # transform to a SF object
-gerSF$area <- lwgeom::st_geod_area(gerSF_2) # calculate the area
+gerSF$area <- lwgeom::st_geod_area(gerSF) # calculate the area
 gerSF$area <- units::set_units(gerSF$area, km^2) # set units to km^2
 
 # STEP 2: Basic visualization
@@ -72,7 +72,7 @@ ger3
 # Nice little extra:
 # display multiple map objects next to each other
 
-tmap_arrange(gerL1, ger2, ger3)
+tmap_arrange(gerL0, ger2, ger3)
 
 
 #STEP 4: Change the looks!
@@ -179,13 +179,21 @@ ger_a + tm_style('cobalt')
 # subset bavaria
 bavaria <- ger[ger@data$NAME_1=='Bayern',]
 bavaria_elev <- crop(gerElev, bavaria)
+bavaria_elev <- mask(bavaria_elev, bavaria)
 
-# Create elevation map of bavaria
-aoi <- tm_shape(bavaria_elev) + tm_raster()+
-  tm_shape(bavaria) + tm_borders()
+# Create elevation map of bavaria with all map elements
+aoi <- tm_shape(bavaria_elev) + tm_raster(title = expression('Elevation [m]'))+
+  tm_shape(bavaria) + tm_borders()+
+  tm_layout(title='Elevation in Bavaria, Germany', title.position = c('left','top'), inner.margins = .07, title.snap.to.legend = FALSE,
+            legend.position = c('left','center'))+
+            #legend.outside = TRUE, legend.outside.position = 'right')+
+  tm_compass(type='8star', position = c('left', 'bottom'), size = 3)+
+  tm_scale_bar(breaks = c(0,50,100), text.size = .5, position = c('right', 'bottom'))
+  
 aoi
 
-extent <- st_as_sfc(st_bbox(bavaria_elev)) # create polygon from aoi extent
+# create polygon from aoi extent
+extent <- st_as_sfc(st_bbox(bavaria_elev)) 
 
 # create 'overview' map with extent of the aoi highlighted
 inset <- tm_shape(gerBorder)+tm_polygons()+
@@ -194,7 +202,7 @@ inset
 
 # And combine the two with a viewport (using viewport() from the grid package)
 aoi
-print(inset, vp=viewport(x=0.77, y=0.82, width = 0.3, height = 0.3)) # adjust the position with x and y
+print(inset, vp=viewport(x=0.83, y=0.82, width = 0.3, height = 0.3)) # adjust the position with x and y
 
 
 
